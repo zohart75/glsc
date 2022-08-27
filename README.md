@@ -1,6 +1,6 @@
 # Garry's Mod Lua Syntax Checker
 GLSC is a free syntax checker for your GLua files (can work not only for GLua)
-![image](https://user-images.githubusercontent.com/40930644/187039352-41cd8391-cf24-45d0-820b-f16245179180.png)
+![image](https://user-images.githubusercontent.com/40930644/187045868-ff6eb96b-9fae-4fe1-aab2-c997970cc04e.png)
 
 ## Features
 * Easy to use
