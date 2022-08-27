@@ -1,0 +1,2 @@
+# glsc
+GLua Syntax Checker
