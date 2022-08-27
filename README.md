@@ -22,3 +22,16 @@ GLSC is a free syntax checker for your GLua files (can work not only for GLua)
 * Not 100% accurate
 * Not 100% complete
 * Requires Lua to run
+
+## Errors
+1. Different tabs
+2. Bad tabs
+3. Cheops pyramid
+4. Use of table.HasValue
+5. Semicolon
+6. Use of table.Random
+7. Bunch of locals
+8. Timer simple
+9. Static objects on runtime
+10. Table creation on runtime
+11. Table insert
