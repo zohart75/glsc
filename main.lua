@@ -22,7 +22,7 @@ function string:split(sChars) local tbl = {} for str in self:gmatch("([^"..sChar
 
 -- INIT
 
-print("[GLSC] GLua Syntax Checker made by Zohart.\n")
+print("[GLSC] GLua Syntax Checker v1.2.0 by Zohart.\n")
 
 local warns = 0
 function log_warning(line, code, comm) warns = warns + 1 print("Line " .. line .. ": " .. code .. " - " .. errors[code] .. (comm and " (" .. comm .. ")" or "")) end
@@ -126,7 +126,7 @@ function check_line(str, line)
 				local skip = false
 				for i, j in ipairs(lastloc) do
 					j = j:gsub("%s", "")
-					
+
 					if(v:find(j))then skip = true break
 					elseif(v:find("%\""))then log_warning(line, 7) skip = true break end
 				end
