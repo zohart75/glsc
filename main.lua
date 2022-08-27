@@ -16,49 +16,79 @@ local errors = {
 
 -- START
 
-local lfs = require("lfs")
 local file = io.input(({ ... })[1])
 
 function string:split(sChars) local tbl = {} for str in self:gmatch("([^"..sChars.."]+)") do tbl[#tbl + 1] = str end return tbl end
 
 -- INIT
 
-print("[GLSC] GLua Syntax Checker made by Zohart.")
-print("[GLSC] Please, make code unshortened for almost 100% result (unshorten `if(cond)then return end`)!\n")
+print("[GLSC] GLua Syntax Checker made by Zohart.\n")
 
 local warns = 0
 function log_warning(line, code, comm) warns = warns + 1 print("Line " .. line .. ": " .. code .. " - " .. errors[code] .. (comm and " (" .. comm .. ")" or "")) end
 
 -- VARS
 
-local tabcs = {
+local tabcs, badtabcs, untabcs, untabcsb, untabcsa, statics, tabs = {
 	".*if.*then.*",
 	".*function.*%(.*%).*",
-	".*for.*%(.*%).*do.*",
-}
-
-local statics = {
+	".*for.*do.*",
+	".*else.*",
+}, {
+	".*if.*then.*end.*",
+	".*function.*%(.*%).*end.*",
+	".*for.*do.*end.*",
+}, {
+	"end",
+	"else",
+	"elseif",
+}, {
+	[" "] = true,
+	[""] = true,
+	["\t"] = true
+}, {
+	[" "] = true,
+	[";"] = true,
+	[")"] = true,
+	[""] = true,
+	["\t"] = true,
+	["("] = true
+}, {
 	"Material",
 	"Color",
 	"GetConVar",
+	"Model",
+}, {
+	[32] = "spaces",
+	[9] = "tabs"
 }
-
-local tabs = { [32] = "spaces", [9] = "tabs" }
 
 -- MAIN
 
-local tabc, lastloc, laststr, lasttab = 0
+local tabc, lastloc, lasttab = 0
 function check_line(str, line)
 	local _tab = str:match("(%s*).*")
 	local tab = string.byte(_tab or "")
 
+	-- CHECK IF STRING CONTAINS BAD TABS
+
+	local isgood = true
+
+	for k, v in ipairs(badtabcs) do
+		if(str:match(v))then isgood = false break end
+	end
+
 	-- TABS
 
-	local before, _end, after = str:match("(.*)(end)(.*)")
+	if(isgood)then
+		for k, v in ipairs(untabcs) do
+			local before, _end, after = str:match("(.*)(" .. v .. ")(.*)")
 
-	if(_end)then
-		local bs, as = before:sub(-1), after:sub(1)
-		if((bs == " " or bs == "" or bs == "\t") and (as == " " or as == ";" or as == ")" or as == "" or as == "\t"))then tabc = tabc - 1 end
+			if(_end)then
+				local bs, as = before:sub(-1, -1), after:sub(1, 1)
+				if(untabcsb[bs] and untabcsa[as])then tabc = tabc - 1 break end
+			end
+		end
 	end
 
 	local symb = _tab:sub(1)
@@ -66,11 +96,13 @@ function check_line(str, line)
 	if(lasttab and _tab)then
 		local byte = symb:byte()
 		if(byte and byte ~= lasttab.byte)then log_warning(line, 1, "using " .. tabs[byte] .. ", not " .. tabs[lasttab.byte]) end
-		if(str ~= "" and _tab:len() ~= lasttab.size * tabc)then log_warning(line, 2) end
+		
+		local curr, size = _tab:len(), lasttab.size
+		if(str ~= "" and curr ~= size * tabc)then log_warning(line, 2, "got " .. math.floor(curr / size) .. " instead of " .. tabc) end
 	elseif(tabc > 0)then
 		if(symb ~= "")then lasttab = { size = _tab:len() / tabc, symbol = symb, byte = symb:byte() } end
 	elseif(symb ~= "")then
-		log_warning(line, 2)
+		log_warning(line, 2, "got " .. math.floor(symb:len() / (lasttab and lasttab.size or 1)) .. " instead of 0")
 	end
 
 	if(tabc > 2)then log_warning(line, 3, tabc .. " if's for one thing!") end
@@ -93,6 +125,8 @@ function check_line(str, line)
 
 				local skip = false
 				for i, j in ipairs(lastloc) do
+					j = j:gsub("%s", "")
+					
 					if(v:find(j))then skip = true break
 					elseif(v:find("%\""))then log_warning(line, 7) skip = true break end
 				end
@@ -106,7 +140,7 @@ function check_line(str, line)
 
 	-- RETURNS
 
-	if(str:match(".*return.*"))then lastloc = nil end
+	if(isgood and str:match(".*return.*"))then lastloc = nil end
 
 	-- OTHER
 
@@ -120,19 +154,19 @@ function check_line(str, line)
 
 		-- TABLES
 
-		if(str:match(".*{.*"))then log_warning(line, 10) end
+		if(str:match(".*{.*"))then log_warning(line, 10, "check if you can localize it") end
 	else
 		if(str:match(".*table%.Insert.*"))then log_warning(line, 11, "are you sure it is needed here?") end
 		if(str:match(".*timer%.Simple.*"))then log_warning(line, 8, "are you sure it is needed here?") end
 	end
 
-	-- SHOULD NEXT BE A TAB?
+	-- SHOULD NEXT STRING BE A TAB?
 
-	for k, v in ipairs(tabcs) do
-		if(str:match(v))then lastloc = nil tabc = tabc + 1 break end
+	if(isgood)then
+		for k, v in ipairs(tabcs) do
+			if(str:match(v))then lastloc = nil tabc = tabc + 1 break end
+		end
 	end
-
-	laststr = str
 end
 
 -- READ
@@ -145,3 +179,5 @@ end
 
 print("\n[GLSC] Scanning complete in " .. os.clock() - start .. "s! Found " .. warns .. " warnings.")
 print("\n[GLSC] This information is not 100% perfect and not 100% full. Please check code additionally by yourself.")
+
+while(true)do end
