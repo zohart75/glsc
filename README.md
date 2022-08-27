@@ -8,14 +8,9 @@ GLSC is a free syntax checker for your GLua files (can work not only for GLua)
 * Can work with standard Lua
 * Can show up to 11 syntax errors
 
-## Install
-**For Windows**: Check releases
-
-**For Others**: Download Lua source
-
 ## Usage
 1. Unpack **GLSC**
-2. Run **main.lua** (or **glsc.bat** for windows users) with file specified in parameters
+2. Run **main.lua** with file specified in parameters
 3. Wait for it to complete
 
 ## Notes
