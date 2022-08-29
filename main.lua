@@ -4,14 +4,11 @@ local errors = {
 	"Different tabs",
 	"Bad tabs",
 	"Cheops pyramid",
-	"Use of table.HasValue",
+	"Bad function",
 	"Semicolon",
-	"Use of table.Random",
-	"Bunch of locals",
-	"Timer simple",
-	"Static objects on runtime",
 	"Table creation on runtime",
-	"Table insert",
+	"Bunch of locals",
+	"Static objects on runtime",
 }
 
 -- START
@@ -29,7 +26,7 @@ function log_warning(line, code, comm) warns = warns + 1 print("Line " .. line .
 
 -- VARS
 
-local tabcs, badtabcs, untabcs, untabcsb, untabcsa, statics, tabs = {
+local tabcs, badtabcs, untabcs, untabcsb, untabcsa, statics, tabs, badfuncs = {
 	".*if.*then.*",
 	".*function.*%(.*%).*",
 	".*for.*do.*",
@@ -61,6 +58,18 @@ local tabcs, badtabcs, untabcs, untabcsb, untabcsa, statics, tabs = {
 }, {
 	[32] = "spaces",
 	[9] = "tabs"
+}, {
+	"table.insert",
+	"table.Random",
+	"table.HasValue",
+	"string.Explode",
+	"string.ToTable",
+	"net.WriteTable",
+	"net.ReadTable",
+	"usermessage",
+	"SetNetworked",
+	"GetNetworked",
+	"string.NiceTime",
 }
 
 -- MAIN
@@ -105,13 +114,15 @@ function check_line(str, line)
 		log_warning(line, 2, "got " .. math.floor(symb:len() / (lasttab and lasttab.size or 1)) .. " instead of 0")
 	end
 
-	if(tabc > 2)then log_warning(line, 3, tabc .. " if's for one thing!") end
+	if(tabc > 2)then log_warning(line, 3, tabc .. " tabs for one thing!") end
 
 	-- ALMOST USELESS THINGS
 
-	if(str:match(".*table%.HasValue.*"))then log_warning(line, 4, "check if you can replace it with tab[val]") end
+	for k, v in ipairs(badfuncs) do
+		if(str:match(".*" .. v .. ".*"))then log_warning(line, 4, v) end
+	end
+	
 	if(str:match(".*;.*"))then log_warning(line, 5) end
-	if(str:match(".*table%.Random.*"))then log_warning(line, 6, "check if you can replace it with tab[math.random(#tab)]") end
 
 	-- LOCALS
 
@@ -127,8 +138,8 @@ function check_line(str, line)
 				for i, j in ipairs(lastloc) do
 					j = j:gsub("%s", "")
 
-					if(v:find(j))then skip = true break
-					elseif(v:find("%\""))then log_warning(line, 7) skip = true break end
+					if(v:find(j) or v:find("%\""))then skip = true break
+					else log_warning(line, 7) skip = true break end
 				end
 
 				if(skip)then break end
@@ -149,16 +160,13 @@ function check_line(str, line)
 		-- STATICS
 
 		for k, v in ipairs(statics) do
-			if(str:match(".*" .. v .. ".*"))then log_warning(line, 9, "creating " .. v) end
+			if(str:match(".*" .. v .. ".*"))then log_warning(line, 8, "creating " .. v) end
 		end
 
 		-- TABLES
 
-		if(str:match(".*{.*"))then log_warning(line, 10, "check if you can localize it") end
-	else
-		if(str:match(".*table%.Insert.*"))then log_warning(line, 11, "are you sure it is needed here?") end
-		if(str:match(".*timer%.Simple.*"))then log_warning(line, 8, "are you sure it is needed here?") end
-	end
+		if(str:match(".*{.*"))then log_warning(line, 6, "check if you can localize it") end
+	elseif(str:match(".*timer%.Simple.*"))then log_warning(line, 4, "timer.Simple, are you sure it is needed here?") end
 
 	-- SHOULD NEXT STRING BE A TAB?
 
